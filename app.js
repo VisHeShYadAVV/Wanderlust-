@@ -1,25 +1,29 @@
 // WanderLust
 
-const express=require("express");
-const app=express();
-const mongoose=require("mongoose");
-const Listing= require("./models/listing.js")
-const path=require("path")
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const Listing = require("./models/listing.js");
+const path = require("path");
+const bodyParser = require('body-parser');
 
-main().then(() =>{
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+main().then(() => {
     console.log("connected to DB");
-}).catch(err =>{
+}).catch(err => {
     console.log(err);
 })
 
-async function main(){
+async function main() {
     await mongoose.connect('mongodb://127.0.0.1:27017/wanderlust');
 };
 
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname,"views"));
+app.set("views", path.join(__dirname, "views"));
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
     res.send("Hi, i am root");
 });
 
@@ -38,11 +42,34 @@ app.get("/",(req,res)=>{
 // });
 
 
-app.get("/listings", async (req,res) =>{
-    const allListings=await Listing.find({});
-    res.render("listings/index", {allListings}); 
+
+
+// Index route
+app.get("/listings", async (req, res) => {
+    const allListings = await Listing.find({});
+    res.render("listings/index", { allListings });
 });
 
-app.listen(8080,()=>{
+
+//NEW ROUTE
+app.get("/listings/new", (req, res) => {
+    res.render("listings/new.ejs");
+});
+
+//Show route
+app.get("/listings/:id", async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findById(id);
+    res.render("listings/show.ejs", { listing });
+});
+
+//Create route
+app.post("/listings", async (req, res) => {
+    const newListing = new Listing(req.body.listing); // Save the new listing
+    await newListing.save();
+    res.redirect("/listings"); // Redirect to listings after saving
+});
+
+app.listen(8080, () => {
     console.log("server is running on 8080");
 });
